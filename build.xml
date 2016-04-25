@@ -1,0 +1,60 @@
+<project name="som" basedir="." default="jar">
+
+    <property name="src.dir"     value="src"/>
+    <property name="lib.dir"     value="libs" />
+    <property name="checkstyle.version" value="6.17" />
+    <property name="mvn.repo"    value="https://repo1.maven.org/maven2" />
+    <property name="truffle.version"    value="0.13" />
+
+    <property name="build.dir"   value="bin"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+
+    <path id="project.classpath">
+        <pathelement location="${classes.dir}" />
+        <pathelement location="${lib.dir}/truffle-api-${truffle.version}.jar" />
+        <pathelement location="${lib.dir}/truffle-dsl-processor-${truffle.version}.jar" />
+    </path>
+
+    <target name="clean" description="Remove build directories and generated code">
+        <delete dir="${build.dir}"/>
+        <delete dir="src_gen"/>
+        <delete file="coveralls-truffle.jar"/>
+    </target>
+    
+    <target name="libs">
+        <get src="${mvn.repo}/com/oracle/truffle/truffle-api/${truffle.version}/truffle-api-${truffle.version}.jar"
+            usetimestamp="true"
+            dest="${lib.dir}/truffle-api-${truffle.version}.jar" />
+        <get src="${mvn.repo}/com/oracle/truffle/truffle-dsl-processor/${truffle.version}/truffle-dsl-processor-${truffle.version}.jar"
+            usetimestamp="true"
+            dest="${lib.dir}/truffle-dsl-processor-${truffle.version}.jar" />
+    </target>
+
+    <target name="checkstyle-jar">
+        <get src="http://iweb.dl.sourceforge.net/project/checkstyle/checkstyle/${checkstyle.version}/checkstyle-${checkstyle.version}-all.jar"
+            usetimestamp="true"
+            dest="${lib.dir}/checkstyle-${checkstyle.version}-all.jar" />
+    </target>
+    
+    <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties" classpath="${lib.dir}/checkstyle-${checkstyle.version}-all.jar" />
+    
+    <target name="checkstyle" depends="checkstyle-jar" description="Check Code with Checkstyle">
+        <checkstyle config=".checkstyle_checks.xml">
+          <fileset dir="src" includes="**/*.java"/>
+          <formatter type="plain"/>
+        </checkstyle>
+    </target>
+
+    <target name="compile" depends="libs" description="Compile TruffleSOM">
+        <mkdir dir="${build.dir}"/>
+        <javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" debug="true">
+          <classpath refid="project.classpath" />
+          <compilerarg line="-Xlint:all" />
+        </javac>
+    </target>
+
+    <target name="jar" depends="compile" description="Package as JAR">
+        <jar destfile="coveralls-truffle.jar" basedir="${build.dir}"></jar>
+    </target>
+
+</project>
