@@ -21,17 +21,22 @@
  */
 package coveralls.truffle;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter.Builder;
@@ -52,7 +57,6 @@ public class Coverage extends TruffleInstrument {
 
   @Override
   protected void onCreate(final Env env) {
-    // TODO Auto-generated method stub
     System.out.println("hello world");
 
     Builder filters = SourceSectionFilter.newBuilder();
@@ -75,9 +79,8 @@ public class Coverage extends TruffleInstrument {
 
   @Override
   protected void onDispose(final Env env) {
-    // TODO Auto-generated method stub
-
-    generateCoverageJson(getCoverageMap());
+    String result = generateCoverageJson(getCoverageMap());
+    sendRequestCoveralls(result);
 
     super.onDispose(env);
   }
@@ -109,30 +112,42 @@ public class Coverage extends TruffleInstrument {
     return coverageMap;
   }
 
-  public void generateCoverageJson(final Map<Source, Long[]> coverageMap) {
-
+  public String generateCoverageJson(final Map<Source, Long[]> coverageMap) {
     JSONObjectBuilder coverageRequest = JSONHelper.object();
-    coverageRequest.add("service_job_id", "1234567890");
-    coverageRequest.add("service-name", "travis-ci");
+
+    //coverageRequest.add("service_job_id", "1234567890");
+    coverageRequest.add("repo_token", "49idI43Y8miJBGWpDj8bqsnLgZCZXaqUj");
+    coverageRequest.add("service-name", "test");
 
     JSONArrayBuilder allSourceFiles = JSONHelper.array();
 
     for (Source s : coverageMap.keySet()) {
       JSONObjectBuilder sourceFile = JSONHelper.object();
 
-      sourceFile.add("name", s.getName());
+      File f = new File(s.getName());
 
-      sourceFile.add("source_digest", getEncryption(s.getInputStream()));
+      if (f.isFile()) {
 
-      sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
+        String currentDir = Paths.get(".").toAbsolutePath().normalize().toString();
+        String absolutePath = f.getAbsolutePath();
 
-      allSourceFiles.add(sourceFile);
+        if (absolutePath.startsWith(currentDir)){
+          String relativePath = absolutePath.substring(currentDir.length() + "/core-lib/".length());
+
+          sourceFile.add("name", relativePath);
+          sourceFile.add("source", readString(s.getInputStream()));
+//          sourceFile.add("source_digest", getEncryptedCode(s.getInputStream()));
+          sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
+
+          allSourceFiles.add(sourceFile);
+        }
+
+      }
+
     }
 
-    coverageRequest.add("sources_files", allSourceFiles);
-
+    coverageRequest.add("source_files", allSourceFiles);
     String result = coverageRequest.toString();
-
     System.out.println("RESULT " + result);
 
     try {
@@ -145,10 +160,22 @@ public class Coverage extends TruffleInstrument {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
+
+    return result;
   }
 
-  private String getEncryption(final InputStream code) {
-    // TODO Auto-generated method stub
+   private String readString(final InputStream inputStream) {
+     try(BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream))){
+       return buffer.lines().collect(Collectors.joining("\n"));
+     } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+     return null;
+  }
+
+  private String getEncryptedCode(final InputStream code) {
     try {
       MessageDigest md = MessageDigest.getInstance("MD5");
       DigestInputStream dis = new DigestInputStream(code, md);
@@ -158,7 +185,8 @@ public class Coverage extends TruffleInstrument {
       do {
         numRead = dis.read(buffer);
 
-      } while (numRead != -1);
+      }
+      while (numRead != -1);
 
       byte[] result = md.digest();
       BigInteger bigInt = new BigInteger(1, result);
@@ -185,9 +213,34 @@ public class Coverage extends TruffleInstrument {
     JSONArrayBuilder array = JSONHelper.array();
 
     for (Long l : values) {
-      array.add(l);
+      if (l != null) {
+        array.add((int) (long) l);
+      } else {
+        array.add(l);
+      }
     }
 
     return array;
+  }
+
+  private void sendRequestCoveralls(final String json){
+    String url = "https://coveralls.io/api/v1/jobs";
+    File jsonFile = new File("coverage_som.json");
+
+    try {
+      MultipartUtility multipart = new MultipartUtility(url, "UTF-8");
+      multipart.addFilePart("json_file", jsonFile);
+
+      List<String> response = multipart.finish();
+
+      System.out.println("SERVER REPLIED:");
+
+      for (String line : response) {
+          System.out.println(line);
+      }
+  } catch (IOException ex) {
+      System.err.println(ex);
+  }
+
   }
 }
