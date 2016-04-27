@@ -29,14 +29,23 @@ import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.oracle.truffle.api.RootCallTarget;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter.Builder;
 import com.oracle.truffle.api.instrumentation.StandardTags.StatementTag;
 import com.oracle.truffle.api.instrumentation.TruffleInstrument;
 import com.oracle.truffle.api.instrumentation.TruffleInstrument.Registration;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.JSONHelper;
@@ -45,16 +54,23 @@ import com.oracle.truffle.api.utilities.JSONHelper.JSONObjectBuilder;
 
 @Registration(id = Coverage.ID)
 public class Coverage extends TruffleInstrument {
-
+  public Instrumenter instrumenter;
   public static final String                ID         = "coverageId";
   private final Map<SourceSection, Counter> statements = new HashMap<>();
 
   @Override
   protected void onCreate(final Env env) {
+    instrumenter = env.getInstrumenter();
+    setUpStatementInstrumentation();
+
+    env.registerService(this);
+  }
+
+  private void setUpStatementInstrumentation() {
     Builder filters = SourceSectionFilter.newBuilder();
     filters.tagIs(StatementTag.class);
 
-    env.getInstrumenter().attachFactory(filters.build(), ctx -> {
+    instrumenter.attachFactory(filters.build(), ctx -> {
       Counter c;
       if (statements.containsKey(ctx.getInstrumentedSourceSection())) {
         c = statements.get(ctx.getInstrumentedSourceSection());
@@ -64,8 +80,6 @@ public class Coverage extends TruffleInstrument {
       }
       return new CountingNode(c);
     });
-
-    env.registerService(this);
   }
 
   @Override
@@ -79,28 +93,39 @@ public class Coverage extends TruffleInstrument {
   public Map<Source, Long[]> getCoverageMap() {
     Map<Source, Long[]> coverageMap = new HashMap<>();
 
+    // cover executed lines
     for (Counter counter : statements.values()) {
-      Source src = counter.getSourceSection().getSource();
-      Long[] array;
-
-      if (coverageMap.containsKey(src)) {
-        array = coverageMap.get(src);
-      } else if (src.getLineCount() == 0) {
-        continue;
-      } else {
-        array = new Long[src.getLineCount()];
-        coverageMap.put(src, array);
-      }
-
-      long val = counter.getCounter();
-      int line = counter.getSourceSection().getStartLine() - 1;
-      if (array[line] == null) {
-        array[line] = val;
-      } else {
-        array[line] = Math.max(val, array[line]);
-      }
+      processCoverage(counter.getCounter(), counter.getSourceSection(), coverageMap);
     }
+
+    // cover not executed lines
+    List<SourceSection> sectionsNotExec = getCodeNotExecuted();
+    for (SourceSection sourceSection : sectionsNotExec) {
+      processCoverage(0, sourceSection, coverageMap);
+    }
+
     return coverageMap;
+  }
+
+  private void processCoverage(final long counterVal,
+      final SourceSection sourceSection, final Map<Source, Long[]> coverageMap) {
+    Long[] array;
+    Source src = sourceSection.getSource();
+    if (coverageMap.containsKey(src)) {
+      array = coverageMap.get(src);
+    } else if (src.getLineCount() == 0) {
+      return;
+    } else {
+      array = new Long[src.getLineCount()];
+      coverageMap.put(src, array);
+    }
+
+    int line = sourceSection.getStartLine() - 1;
+    if (array[line] == null) {
+      array[line] = counterVal;
+    } else {
+      array[line] = Math.max(counterVal, array[line]);
+    }
   }
 
   public String generateCoverageJson(final Map<Source, Long[]> coverageMap) {
@@ -119,7 +144,8 @@ public class Coverage extends TruffleInstrument {
 
       if (f.isFile()) {
 
-        String currentDir = Paths.get(".").toAbsolutePath().normalize().toString();
+        String currentDir = Paths.get(".").toAbsolutePath().
+            normalize().toString();
         String absolutePath = f.getAbsolutePath();
 
         if (absolutePath.startsWith(currentDir)) {
@@ -199,5 +225,33 @@ public class Coverage extends TruffleInstrument {
       System.err.println(ex);
       // Checkstyle: resume
     }
+  }
+
+  public List<SourceSection> getCodeNotExecuted() {
+    Collection<RootCallTarget> collection = Truffle.getRuntime().getCallTargets();
+    List<SourceSection> allSourceSections = new ArrayList<>();
+
+    for (RootCallTarget  rootCallTarget: collection) {
+      RootNode root = rootCallTarget.getRootNode(); // AST node
+      Map<SourceSection, Set<Class<?>>> sourceSectionsAndTags = new HashMap<>();
+
+      root.accept(node -> {
+        Set<Class<?>> tags = instrumenter.queryTags(node);
+
+        if (tags.contains(StatementTag.class)) {
+          if (sourceSectionsAndTags.containsKey(node.getSourceSection())) {
+            sourceSectionsAndTags.get(node.getSourceSection()).addAll(tags);
+          } else {
+            sourceSectionsAndTags.put(node.getSourceSection(),
+                new HashSet<>(tags));
+          }
+        }
+        return true;
+      });
+
+      allSourceSections.addAll(sourceSectionsAndTags.keySet());
+    }
+
+    return allSourceSections;
   }
 }
