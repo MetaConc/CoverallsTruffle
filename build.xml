@@ -26,6 +26,7 @@
     </target>
     
     <target name="libs">
+        <mkdir dir="${lib.dir}"/>
         <get src="${mvn.repo}/com/oracle/truffle/truffle-api/${truffle.version}/truffle-api-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/truffle-api-${truffle.version}.jar" />
@@ -47,6 +48,7 @@
     </target>
 
     <target name="checkstyle-jar">
+        <mkdir dir="${lib.dir}"/>
         <get src="http://iweb.dl.sourceforge.net/project/checkstyle/checkstyle/${checkstyle.version}/checkstyle-${checkstyle.version}-all.jar"
             usetimestamp="true"
             dest="${lib.dir}/checkstyle-${checkstyle.version}-all.jar" />
