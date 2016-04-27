@@ -8,15 +8,5 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/commons-codec-1.9.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/commons-logging-1.2.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/fluent-hc-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/httpclient-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/httpclient-cache-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/httpclient-win-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/httpcore-4.4.4.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/httpmime-4.5.2.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/jna-4.1.0.jar"/>
-	<classpathentry kind="lib" path="/Users/carmentorres/Documents/Eclipse_Workspace/CoverallsTruffle/httplib/jna-platform-4.1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
