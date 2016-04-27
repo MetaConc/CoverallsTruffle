@@ -21,22 +21,16 @@
  */
 package coveralls.truffle;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter.Builder;
@@ -133,8 +127,7 @@ public class Coverage extends TruffleInstrument {
               currentDir.length() + "/core-lib/".length());
 
           sourceFile.add("name", relativePath);
-          sourceFile.add("source", readString(s.getInputStream()));
-//          sourceFile.add("source_digest", getEncryptedCode(s.getInputStream()));
+          sourceFile.add("source_digest", getEncryptedCode(s.getInputStream()));
           sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
 
           allSourceFiles.add(sourceFile);
@@ -143,32 +136,7 @@ public class Coverage extends TruffleInstrument {
     }
 
     coverageRequest.add("source_files", allSourceFiles);
-    String result = coverageRequest.toString();
-    System.out.println("RESULT " + result);
-
-    try {
-
-      PrintWriter printer = new PrintWriter(new File("coverage_som.json"));
-      printer.write(result);
-      printer.close();
-
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    return result;
-  }
-
-   private String readString(final InputStream inputStream) {
-     try(BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream))){
-       return buffer.lines().collect(Collectors.joining("\n"));
-     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-     return null;
+    return coverageRequest.toString();
   }
 
   private String getEncryptedCode(final InputStream code) {
@@ -219,24 +187,17 @@ public class Coverage extends TruffleInstrument {
     return array;
   }
 
-  private void sendRequestCoveralls(final String json){
+  private void sendRequestCoveralls(final String json) {
     String url = "https://coveralls.io/api/v1/jobs";
-    File jsonFile = new File("coverage_som.json");
-
     try {
       MultipartUtility multipart = new MultipartUtility(url, "UTF-8");
-      multipart.addFilePart("json_file", jsonFile);
+      multipart.addFilePart("json_file", json, "application/json");
 
-      List<String> response = multipart.finish();
-
-      System.out.println("SERVER REPLIED:");
-
-      for (String line : response) {
-          System.out.println(line);
-      }
-  } catch (IOException ex) {
+      multipart.finish();
+    } catch (IOException ex) {
+      // Checkstyle: stop
       System.err.println(ex);
-  }
-
+      // Checkstyle: resume
+    }
   }
 }
