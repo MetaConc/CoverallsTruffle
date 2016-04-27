@@ -54,8 +54,10 @@ import com.oracle.truffle.api.utilities.JSONHelper.JSONObjectBuilder;
 
 @Registration(id = Coverage.ID)
 public class Coverage extends TruffleInstrument {
-  public Instrumenter instrumenter;
+  private Instrumenter instrumenter;
   public static final String                ID         = "coverageId";
+  private String                repoToken;
+  private String                serviceName;
   private final Map<SourceSection, Counter> statements = new HashMap<>();
 
   @Override
@@ -131,9 +133,8 @@ public class Coverage extends TruffleInstrument {
   public String generateCoverageJson(final Map<Source, Long[]> coverageMap) {
     JSONObjectBuilder coverageRequest = JSONHelper.object();
 
-    // coverageRequest.add("service_job_id", "1234567890");
-    coverageRequest.add("repo_token", "49idI43Y8miJBGWpDj8bqsnLgZCZXaqUj");
-    coverageRequest.add("service-name", "test");
+    coverageRequest.add("repo_token", getRepoToken());
+    coverageRequest.add("service-name", getServiceName());
 
     JSONArrayBuilder allSourceFiles = JSONHelper.array();
 
@@ -150,7 +151,7 @@ public class Coverage extends TruffleInstrument {
 
         if (absolutePath.startsWith(currentDir)) {
           String relativePath = absolutePath.substring(
-              currentDir.length() + "/core-lib/".length());
+              currentDir.length());
 
           sourceFile.add("name", relativePath);
           sourceFile.add("source_digest", getEncryptedCode(s.getInputStream()));
@@ -253,5 +254,24 @@ public class Coverage extends TruffleInstrument {
     }
 
     return allSourceSections;
+  }
+
+  public String getRepoToken() {
+    return repoToken;
+  }
+
+
+  public void setRepoToken(final String repoToken) {
+    this.repoToken = repoToken;
+  }
+
+
+  public String getServiceName() {
+    return serviceName;
+  }
+
+
+  public void setServiceName(final String serviceName) {
+    this.serviceName = serviceName;
   }
 }
