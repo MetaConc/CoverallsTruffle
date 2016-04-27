@@ -57,8 +57,6 @@ public class Coverage extends TruffleInstrument {
 
   @Override
   protected void onCreate(final Env env) {
-    System.out.println("hello world");
-
     Builder filters = SourceSectionFilter.newBuilder();
     filters.tagIs(StatementTag.class);
 
@@ -66,12 +64,10 @@ public class Coverage extends TruffleInstrument {
       Counter c;
       if (statements.containsKey(ctx.getInstrumentedSourceSection())) {
         c = statements.get(ctx.getInstrumentedSourceSection());
-
       } else {
         c = new Counter(ctx.getInstrumentedSourceSection());
         statements.put(ctx.getInstrumentedSourceSection(), c);
       }
-
       return new CountingNode(c);
     });
 
@@ -116,7 +112,7 @@ public class Coverage extends TruffleInstrument {
   public String generateCoverageJson(final Map<Source, Long[]> coverageMap) {
     JSONObjectBuilder coverageRequest = JSONHelper.object();
 
-    //coverageRequest.add("service_job_id", "1234567890");
+    // coverageRequest.add("service_job_id", "1234567890");
     coverageRequest.add("repo_token", "49idI43Y8miJBGWpDj8bqsnLgZCZXaqUj");
     coverageRequest.add("service-name", "test");
 
@@ -132,8 +128,9 @@ public class Coverage extends TruffleInstrument {
         String currentDir = Paths.get(".").toAbsolutePath().normalize().toString();
         String absolutePath = f.getAbsolutePath();
 
-        if (absolutePath.startsWith(currentDir)){
-          String relativePath = absolutePath.substring(currentDir.length() + "/core-lib/".length());
+        if (absolutePath.startsWith(currentDir)) {
+          String relativePath = absolutePath.substring(
+              currentDir.length() + "/core-lib/".length());
 
           sourceFile.add("name", relativePath);
           sourceFile.add("source", readString(s.getInputStream()));
@@ -142,9 +139,7 @@ public class Coverage extends TruffleInstrument {
 
           allSourceFiles.add(sourceFile);
         }
-
       }
-
     }
 
     coverageRequest.add("source_files", allSourceFiles);
