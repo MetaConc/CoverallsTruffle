@@ -75,6 +75,7 @@ public class Coverage extends TruffleInstrument {
       return new CountingNode(c);
     });
 
+    env.registerService(this);
   }
 
   @Override
