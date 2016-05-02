@@ -154,7 +154,7 @@ public class Coverage extends TruffleInstrument {
               currentDir.length());
 
           sourceFile.add("name", relativePath);
-          sourceFile.add("source_digest", getEncryptedCode(s.getInputStream()));
+          sourceFile.add("source_digest", getMd5(s.getInputStream()));
           sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
 
           allSourceFiles.add(sourceFile);
@@ -166,7 +166,7 @@ public class Coverage extends TruffleInstrument {
     return coverageRequest.toString();
   }
 
-  private String getEncryptedCode(final InputStream code) {
+  private String getMd5(final InputStream code) {
     try {
       MessageDigest md = MessageDigest.getInstance("MD5");
       DigestInputStream dis = new DigestInputStream(code, md);
