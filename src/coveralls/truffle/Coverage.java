@@ -54,10 +54,10 @@ import com.oracle.truffle.api.utilities.JSONHelper.JSONObjectBuilder;
 
 @Registration(id = Coverage.ID)
 public class Coverage extends TruffleInstrument {
-  private Instrumenter instrumenter;
-  public static final String                ID         = "coverageId";
-  private String                repoToken;
-  private String                serviceName;
+  private Instrumenter       instrumenter;
+  public static final String ID = "coverageId";
+  private String             repoToken;
+  private String             serviceName;
   private final Map<SourceSection, Counter> statements = new HashMap<>();
 
   @Override
@@ -260,7 +260,6 @@ public class Coverage extends TruffleInstrument {
     return repoToken;
   }
 
-
   public void setRepoToken(final String repoToken) {
     this.repoToken = repoToken;
   }
@@ -269,7 +268,6 @@ public class Coverage extends TruffleInstrument {
   public String getServiceName() {
     return serviceName;
   }
-
 
   public void setServiceName(final String serviceName) {
     this.serviceName = serviceName;
