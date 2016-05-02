@@ -59,6 +59,7 @@ public class Coverage extends TruffleInstrument {
   private String             repoToken;
   private String             serviceName;
   private final Map<SourceSection, Counter> statements = new HashMap<>();
+  private boolean            includeTravisData;
 
   @Override
   protected void onCreate(final Env env) {
@@ -133,6 +134,12 @@ public class Coverage extends TruffleInstrument {
 
     coverageRequest.add("repo_token",   repoToken);
     coverageRequest.add("service_name", serviceName);
+
+    if (includeTravisData) {
+      Map<String, String> env = System.getenv();
+      coverageRequest.add("service_job_id", env.get("TRAVIS_JOB_ID"));
+      coverageRequest.add("service_pull_request", env.get("TRAVIS_PULL_REQUEST"));
+    }
 
     JSONArrayBuilder allSourceFiles = JSONHelper.array();
 
@@ -258,6 +265,8 @@ public class Coverage extends TruffleInstrument {
     this.repoToken = repoToken;
   }
 
+  public void includeTravisData(final boolean enabled) {
+    includeTravisData = enabled;
   }
 
   public void setServiceName(final String serviceName) {
