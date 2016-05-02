@@ -133,8 +133,8 @@ public class Coverage extends TruffleInstrument {
   public String generateCoverageJson(final Map<Source, Long[]> coverageMap) {
     JSONObjectBuilder coverageRequest = JSONHelper.object();
 
-    coverageRequest.add("repo_token", getRepoToken());
-    coverageRequest.add("service-name", getServiceName());
+    coverageRequest.add("repo_token",   repoToken);
+    coverageRequest.add("service_name", serviceName);
 
     JSONArrayBuilder allSourceFiles = JSONHelper.array();
 
@@ -256,17 +256,10 @@ public class Coverage extends TruffleInstrument {
     return allSourceSections;
   }
 
-  public String getRepoToken() {
-    return repoToken;
-  }
-
   public void setRepoToken(final String repoToken) {
     this.repoToken = repoToken;
   }
 
-
-  public String getServiceName() {
-    return serviceName;
   }
 
   public void setServiceName(final String serviceName) {
