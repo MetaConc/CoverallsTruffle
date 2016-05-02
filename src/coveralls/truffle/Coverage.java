@@ -88,8 +88,6 @@ public class Coverage extends TruffleInstrument {
   protected void onDispose(final Env env) {
     String result = generateCoverageJson(getCoverageMap());
     sendRequestCoveralls(result);
-
-    super.onDispose(env);
   }
 
   public Map<Source, Long[]> getCoverageMap() {
