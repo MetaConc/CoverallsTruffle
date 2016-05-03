@@ -36,8 +36,10 @@ coverage.setServiceName("travis-ci"); // Set the service_name, see Coveralls doc
 // start execution as usual.
 ```
 
-As a further example, see [`Tests`][4], which uses the SimpleLanguage to check
-that the coverage is determined correctly.
+For further examples, see [`Tests`][4], which uses the SimpleLanguage to check
+that the coverage is determined correctly, as well as the coverage support
+for SOMns introduced with commit [dc381d](https://github.com/smarr/SOMns/commit/dc381d25786a282dadc9d6783cdd6c195cb1f3d7).
+An example coverage report for the SOMns core library is [https://coveralls.io/builds/6016050](https://coveralls.io/builds/6016050).
 
 # Implementation Overview
 
