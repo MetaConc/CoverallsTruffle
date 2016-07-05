@@ -4,7 +4,7 @@
     <property name="lib.dir"            value="libs" />
     <property name="checkstyle.version" value="7.0" />
     <property name="mvn.repo"           value="https://repo1.maven.org/maven2" />
-    <property name="truffle.version"    value="0.14" />
+    <property name="truffle.version"    value="0.15" />
     <property name="junit.version"      value="4.12" />
 
     <property name="build.dir"   value="bin"/>

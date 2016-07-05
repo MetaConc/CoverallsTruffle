@@ -26,8 +26,9 @@ public class Tests {
   @Test
   public void checkCoverageMapForTestSLFile() throws IOException {
     InputStream testSlFile = getClass().getResourceAsStream("test.sl");
-    Source testSl = Source.fromReader(new InputStreamReader(testSlFile), "test.sl").
-        withMimeType("application/x-sl");
+    Source testSl = Source.newBuilder(new InputStreamReader(testSlFile)).
+        name("test.sl").mimeType("application/x-sl").
+        build();
 
     engine.eval(testSl);
 

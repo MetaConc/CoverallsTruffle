@@ -30,16 +30,14 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.oracle.truffle.api.RootCallTarget;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
+import com.oracle.truffle.api.instrumentation.LoadSourceSectionEvent;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter.Builder;
 import com.oracle.truffle.api.instrumentation.StandardTags.StatementTag;
@@ -60,6 +58,7 @@ public class Coverage extends TruffleInstrument {
   private String             serviceName;
   private final Map<SourceSection, Counter> statements = new HashMap<>();
   private boolean            includeTravisData;
+  private Set<RootNode>      rootNodes = new HashSet<>();
 
   @Override
   protected void onCreate(final Env env) {
@@ -83,6 +82,12 @@ public class Coverage extends TruffleInstrument {
       }
       return new CountingNode(c);
     });
+
+    instrumenter.attachLoadSourceSectionListener(
+        SourceSectionFilter.newBuilder().build(),
+        (final LoadSourceSectionEvent event) -> {
+          rootNodes.add(event.getNode().getRootNode()); },
+        true);
   }
 
   @Override
@@ -234,11 +239,9 @@ public class Coverage extends TruffleInstrument {
   }
 
   public List<SourceSection> getCodeNotExecuted() {
-    Collection<RootCallTarget> collection = Truffle.getRuntime().getCallTargets();
     List<SourceSection> allSourceSections = new ArrayList<>();
 
-    for (RootCallTarget  rootCallTarget: collection) {
-      RootNode root = rootCallTarget.getRootNode(); // AST node
+    for (RootNode root : rootNodes) {
       Map<SourceSection, Set<Class<?>>> sourceSectionsAndTags = new HashMap<>();
 
       root.accept(node -> {
