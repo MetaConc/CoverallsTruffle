@@ -23,16 +23,20 @@ package coveralls.truffle;
 
 import com.oracle.truffle.api.source.SourceSection;
 
-public class Counter {
-  public long counter;
+class Counter {
+  private long counter;
   public final SourceSection sourceSection;
 
-  public Counter(final SourceSection sourceSection) {
+  Counter(final SourceSection sourceSection) {
     this.counter = 0;
     this.sourceSection = sourceSection;
   }
 
-  public long getCounter() {
+  void inc() {
+    counter += 1;
+  }
+
+  long getCounter() {
     return counter;
   }
 

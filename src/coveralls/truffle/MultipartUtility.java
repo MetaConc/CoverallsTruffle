@@ -19,7 +19,7 @@ import java.net.URL;
  * @see http://www.codejava.net/java-se/networking/upload-files-by-sending-
  *      multipart-request-programmatically
  */
-public class MultipartUtility {
+class MultipartUtility {
 
   private final String        boundary;
   private static final String LINE_FEED = "\r\n";
@@ -35,7 +35,7 @@ public class MultipartUtility {
    * @param charset
    * @throws IOException
    */
-  public MultipartUtility(final String requestURL, final String charset)
+  MultipartUtility(final String requestURL, final String charset)
       throws IOException {
     // creates a unique boundary based on time stamp
     boundary = "===" + System.currentTimeMillis() + "===";
@@ -62,7 +62,7 @@ public class MultipartUtility {
    *          a File to be uploaded
    * @throws IOException
    */
-  public void addFilePart(final String fieldName, final String content,
+  void addFilePart(final String fieldName, final String content,
       final String contentType)
       throws IOException {
     writer.append("--" + boundary).append(LINE_FEED);
@@ -82,7 +82,7 @@ public class MultipartUtility {
    *
    * @throws IOException
    */
-  public void finish() throws IOException {
+  void finish() throws IOException {
     writer.append(LINE_FEED).flush();
     writer.append("--" + boundary + "--").append(LINE_FEED);
     writer.close();
