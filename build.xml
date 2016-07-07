@@ -1,4 +1,4 @@
-<project name="som" basedir="." default="jar">
+<project name="CoverallsTruffle" basedir="." default="jar">
 
     <property name="src.dir"            value="src"/>
     <property name="lib.dir"            value="libs" />
@@ -19,9 +19,12 @@
         <pathelement location="${lib.dir}/hamcrest-core-1.3.jar" />
     </path>
 
+    <target name="clobber" depends="clean" description="Remove build directories and generated code">
+        <delete dir="${lib.dir}"/>
+    </target>
+
     <target name="clean" description="Remove build directories and generated code">
         <delete dir="${build.dir}"/>
-        <delete dir="src_gen"/>
         <delete file="coveralls-truffle.jar"/>
     </target>
     
@@ -62,7 +65,7 @@
         </checkstyle>
     </target>
 
-    <target name="compile" depends="libs" description="Compile TruffleSOM">
+    <target name="compile" depends="libs" description="Compile">
         <mkdir dir="${build.dir}"/>
         <javac includeantruntime="false" srcdir="${src.dir}" destdir="${build.dir}" debug="true">
           <classpath refid="project.classpath" />
