@@ -1,4 +1,5 @@
 bin
 libs
 coveralls-truffle.jar
+coveralls-truffle-source.jar
 /src_gen/

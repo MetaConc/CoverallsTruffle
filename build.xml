@@ -83,6 +83,10 @@
         <jar destfile="coveralls-truffle.jar" basedir="${build.dir}"></jar>
     </target>
 
+    <target name="source-jar" depends="compile" description="Package Source as JAR">
+        <jar destfile="coveralls-truffle-source.jar" basedir="${src.dir}"></jar>
+    </target>
+
     <target name="unit-tests" depends="compile" description="Execute tests">
         <junit haltonerror="true" haltonfailure="true" outputtoformatters="true">
             <jvmarg value="-ea" />
