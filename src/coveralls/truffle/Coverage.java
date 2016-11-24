@@ -151,24 +151,24 @@ public class Coverage extends TruffleInstrument {
     for (Source s : coverageMap.keySet()) {
       JSONObjectBuilder sourceFile = JSONHelper.object();
 
-      File f = new File(s.getName());
+      if (s.getPath() == null) { continue; }
+      File f = new File(s.getPath());
 
-      if (f.isFile()) {
+      if (!f.isFile()) { continue; }
 
-        String currentDir = Paths.get(".").toAbsolutePath().
-            normalize().toString();
-        String absolutePath = f.getAbsolutePath();
+      String currentDir = Paths.get(".").toAbsolutePath().
+          normalize().toString();
+      String absolutePath = f.getAbsolutePath();
 
-        if (absolutePath.startsWith(currentDir)) {
-          String relativePath = absolutePath.substring(
-              currentDir.length());
+      if (absolutePath.startsWith(currentDir)) {
+        String relativePath = absolutePath.substring(
+            currentDir.length());
 
-          sourceFile.add("name", relativePath);
-          sourceFile.add("source_digest", getMd5(s.getInputStream()));
-          sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
+        sourceFile.add("name", relativePath);
+        sourceFile.add("source_digest", getMd5(s.getInputStream()));
+        sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
 
-          allSourceFiles.add(sourceFile);
-        }
+        allSourceFiles.add(sourceFile);
       }
     }
 
