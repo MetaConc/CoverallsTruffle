@@ -22,18 +22,16 @@
 package coveralls.truffle;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.file.Paths;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.oracle.truffle.api.instrumentation.Instrumenter;
@@ -46,19 +44,19 @@ import com.oracle.truffle.api.instrumentation.TruffleInstrument.Registration;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.JSONHelper;
-import com.oracle.truffle.api.utilities.JSONHelper.JSONArrayBuilder;
-import com.oracle.truffle.api.utilities.JSONHelper.JSONObjectBuilder;
+
+import gcov.Gcov;
 
 @Registration(id = Coverage.ID)
 public class Coverage extends TruffleInstrument {
   private Instrumenter       instrumenter;
   public static final String ID = "coverageId";
-  private String             repoToken;
-  private String             serviceName;
   private final Map<SourceSection, Counter> statements = new HashMap<>();
-  private boolean            includeTravisData;
+
   private Set<RootNode>      rootNodes = new HashSet<>();
+
+  private String file;
+  private Map<String, Long[]> coverage;
 
   @Override
   protected void onCreate(final Env env) {
@@ -92,12 +90,22 @@ public class Coverage extends TruffleInstrument {
 
   @Override
   protected void onDispose(final Env env) {
-    String result = generateCoverageJson(getCoverageMap());
-    sendRequestCoveralls(result);
+    if (file == null) {
+      return;
+    }
+
+    try {
+      Map<String, Long[]> map = getCoverageMap(coverage);
+      try (FileWriter writter = new FileWriter(file)) {
+        writter.write(Gcov.toString(map));
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  public Map<Source, Long[]> getCoverageMap() {
-    Map<Source, Long[]> coverageMap = new HashMap<>();
+  public Map<String, Long[]> getCoverageMap(final Map<String, Long[]> oldData) {
+    Map<String, Long[]> coverageMap = new HashMap<>();
 
     // cover executed lines
     for (Counter counter : statements.values()) {
@@ -110,131 +118,51 @@ public class Coverage extends TruffleInstrument {
       processCoverage(0, sourceSection, coverageMap);
     }
 
+    // merge with old data
+    for (Entry<String, Long[]> e : oldData.entrySet()) {
+      Long[] data = coverageMap.get(e.getKey());
+      Long[] oldD = e.getValue();
+      if (data != null) {
+        assert oldD.length <= data.length :
+          "The gcov data format doesn't make lines explicit that don't have code";
+        for (int i = 0; i < oldD.length; i += 1) {
+          if (oldD[i] != null) {
+            updateLine(data, i, oldD[i]);
+          }
+        }
+      } else {
+        assert oldD != null;
+        coverageMap.put(e.getKey(), oldD);
+      }
+    }
+
     return coverageMap;
   }
 
   private void processCoverage(final long counterVal,
-      final SourceSection sourceSection, final Map<Source, Long[]> coverageMap) {
+      final SourceSection sourceSection, final Map<String, Long[]> coverageMap) {
     Long[] array;
-    Source src = sourceSection.getSource();
-    if (coverageMap.containsKey(src)) {
-      array = coverageMap.get(src);
-    } else if (src.getLineCount() == 0) {
+    Source s = sourceSection.getSource();
+    String path = s.getPath() != null ? s.getPath() : s.getName();
+
+    if (coverageMap.containsKey(path)) {
+      array = coverageMap.get(path);
+    } else if (s.getLineCount() == 0) {
       return;
     } else {
-      array = new Long[src.getLineCount()];
-      coverageMap.put(src, array);
+      array = new Long[s.getLineCount()];
+      coverageMap.put(path, array);
     }
 
     int line = sourceSection.getStartLine() - 1;
-    if (array[line] == null) {
-      array[line] = counterVal;
+    updateLine(array, line, counterVal);
+  }
+
+  private static void updateLine(final Long[] arr, final int line, final long cntVal) {
+    if (arr[line] == null) {
+      arr[line] = cntVal;
     } else {
-      array[line] = Math.max(counterVal, array[line]);
-    }
-  }
-
-  public String generateCoverageJson(final Map<Source, Long[]> coverageMap) {
-    JSONObjectBuilder coverageRequest = JSONHelper.object();
-
-    coverageRequest.add("repo_token",   repoToken);
-    coverageRequest.add("service_name", serviceName);
-
-    if (includeTravisData) {
-      Map<String, String> env = System.getenv();
-      coverageRequest.add("service_job_id", env.get("TRAVIS_JOB_ID"));
-      coverageRequest.add("service_pull_request", env.get("TRAVIS_PULL_REQUEST"));
-    }
-
-    JSONArrayBuilder allSourceFiles = JSONHelper.array();
-
-    for (Source s : coverageMap.keySet()) {
-      JSONObjectBuilder sourceFile = JSONHelper.object();
-
-      if (s.getPath() == null) { continue; }
-      File f = new File(s.getPath());
-
-      if (!f.isFile()) { continue; }
-
-      String currentDir = Paths.get(".").toAbsolutePath().
-          normalize().toString();
-      String absolutePath = f.getAbsolutePath();
-
-      if (absolutePath.startsWith(currentDir)) {
-        String relativePath = absolutePath.substring(
-            currentDir.length());
-
-        sourceFile.add("name", relativePath);
-        sourceFile.add("source_digest", getMd5(s.getInputStream()));
-        sourceFile.add("coverage", getArrayBuilder(coverageMap.get(s)));
-
-        allSourceFiles.add(sourceFile);
-      }
-    }
-
-    coverageRequest.add("source_files", allSourceFiles);
-    return coverageRequest.toString();
-  }
-
-  private String getMd5(final InputStream code) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("MD5");
-      DigestInputStream dis = new DigestInputStream(code, md);
-
-      byte[] buffer = new byte[1024];
-      int numRead;
-      do {
-        numRead = dis.read(buffer);
-
-      }
-      while (numRead != -1);
-
-      byte[] result = md.digest();
-      BigInteger bigInt = new BigInteger(1, result);
-      String str = bigInt.toString(16);
-
-      while (str.length() < 32) {
-        str = "0" + str;
-      }
-
-      return str;
-
-    } catch (NoSuchAlgorithmException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    return null;
-  }
-
-  private JSONArrayBuilder getArrayBuilder(final Long[] values) {
-    JSONArrayBuilder array = JSONHelper.array();
-
-    for (Long l : values) {
-      if (l != null) {
-        array.add((int) (long) l);
-      } else {
-        array.add(l);
-      }
-    }
-
-    return array;
-  }
-
-  private void sendRequestCoveralls(final String json) {
-    String url = "https://coveralls.io/api/v1/jobs";
-    try {
-      MultipartUtility multipart = new MultipartUtility(url, "UTF-8");
-      multipart.addFilePart("json_file", json, "application/json");
-
-      multipart.finish();
-    } catch (IOException ex) {
-      // Checkstyle: stop
-      System.err.println(ex);
-      // Checkstyle: resume
+      arr[line] = Math.max(cntVal, arr[line]);
     }
   }
 
@@ -264,15 +192,16 @@ public class Coverage extends TruffleInstrument {
     return allSourceSections;
   }
 
-  public void setRepoToken(final String repoToken) {
-    this.repoToken = repoToken;
-  }
-
-  public void includeTravisData(final boolean enabled) {
-    includeTravisData = enabled;
-  }
-
-  public void setServiceName(final String serviceName) {
-    this.serviceName = serviceName;
+  /**
+   * @param file, i.e., path to the file
+   */
+  public void setOutputFile(final String file) throws FileNotFoundException, IOException {
+    this.file = file;
+    File f = new File(file);
+    if (f.exists()) {
+      coverage = Gcov.load(new FileInputStream(f));
+    } else {
+      coverage = new HashMap<>();
+    }
   }
 }
