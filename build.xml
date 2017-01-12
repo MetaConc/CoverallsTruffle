@@ -76,6 +76,7 @@
         </javac>
         <copy todir="${build.dir}">
             <fileset dir="tests" includes="**/*.sl" />
+            <fileset dir="tests" includes="**/*.gcov" />
         </copy>
     </target>
 
