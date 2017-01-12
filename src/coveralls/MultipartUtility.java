@@ -1,4 +1,4 @@
-package coveralls.truffle;
+package coveralls;
 
 import java.io.BufferedReader;
 import java.io.IOException;
