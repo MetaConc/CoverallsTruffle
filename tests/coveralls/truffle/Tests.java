@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Before;
@@ -23,18 +24,21 @@ public class Tests {
   private Instrument     engineInst;
   private Coverage       covInst;
 
+  private static final String TEST_FILE = "test.sl";
+
   @Test
   public void checkCoverageMapForTestSLFile() throws IOException {
     InputStream testSlFile = getClass().getResourceAsStream("test.sl");
     Source testSl = Source.newBuilder(new InputStreamReader(testSlFile)).
-        name("test.sl").mimeType("application/x-sl").
+        name(TEST_FILE).mimeType("application/x-sl").
         build();
 
     engine.eval(testSl);
 
-    Map<Source, Long[]> result = covInst.getCoverageMap();
-    assertTrue(result.containsKey(testSl));
-    Long[] lines = result.get(testSl);
+    Map<String, Long[]> result = covInst.getCoverageMap(new HashMap<>());
+
+    assertTrue(result.containsKey(TEST_FILE));
+    Long[] lines = result.get(TEST_FILE);
 
     assertArrayEquals(new Long[] {
         null, 0L, 0L, 0L, null, null,
