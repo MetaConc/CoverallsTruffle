@@ -1,13 +1,13 @@
 <project name="CoverallsTruffle" basedir="." default="jar">
 
-    <property name="src.dir"            value="src"/>
-    <property name="lib.dir"            value="libs" />
+    <property name="src.dir"            location="src"/>
+    <property name="lib.dir"            location="libs" />
     <property name="checkstyle.version" value="8.12" />
     <property name="mvn.repo"           value="https://repo1.maven.org/maven2" />
     <property name="truffle.version"    value="1.0.0-rc5" />
     <property name="junit.version"      value="4.12" />
 
-    <property name="build.dir"   value="bin"/>
+    <property name="build.dir"          location="bin"/>
 
     <path id="project.classpath">
         <pathelement location="${build.dir}" />
