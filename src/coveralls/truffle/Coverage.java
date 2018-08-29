@@ -37,6 +37,8 @@ import java.util.Set;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.Instrument;
 
+import com.oracle.truffle.api.InstrumentInfo;
+import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.LoadSourceSectionEvent;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
@@ -64,6 +66,16 @@ public class Coverage extends TruffleInstrument {
     }
 
     return instrument.lookup(Coverage.class);
+  }
+
+  public static Coverage find(final TruffleLanguage.Env env) {
+    InstrumentInfo instrument = env.getInstruments().get(ID);
+    if (instrument == null) {
+      throw new IllegalStateException(
+          "WebDebugger not properly installed into polyglot.Engine");
+    }
+
+    return env.lookup(instrument, Coverage.class);
   }
 
   private final Map<SourceSection, Counter> statements = new HashMap<>();
