@@ -10,30 +10,28 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Source;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.api.vm.PolyglotEngine;
-import com.oracle.truffle.api.vm.PolyglotEngine.Instrument;
+import com.oracle.truffle.sl.SLLanguage;
 
 
 public class Tests {
 
-  private PolyglotEngine engine;
-  private Instrument     engineInst;
-  private Coverage       covInst;
+  private Context  context;
+  private Coverage covInst;
 
   private static final String TEST_FILE = "test.sl";
 
   @Test
   public void checkCoverageMapForTestSLFile() throws IOException {
     InputStream testSlFile = getClass().getResourceAsStream("test.sl");
-    Source testSl = Source.newBuilder(new InputStreamReader(testSlFile)).
-        name(TEST_FILE).mimeType("application/x-sl").
-        build();
+    Source testSl =
+        Source.newBuilder("sl", new InputStreamReader(testSlFile), TEST_FILE).build();
 
-    engine.eval(testSl);
+    context.eval(testSl);
 
     Map<String, Long[]> result = covInst.getCoverageMap(new HashMap<>());
 
@@ -48,16 +46,12 @@ public class Tests {
 
   @Before
   public void initSL() {
-    engine = PolyglotEngine.newBuilder().build();
+    context = Context.newBuilder(SLLanguage.ID).in(System.in).out(System.out)
+                     .allowAllAccess(true).build();
     assertTrue("SimpleLanguage needs to be on the classpath for tests",
-        engine.getLanguages().containsKey("application/x-sl"));
+        context.getEngine().getLanguages().containsKey(SLLanguage.ID));
 
-    engineInst = engine.getInstruments().get(Coverage.ID);
-    assertNotNull("Coverage tool not found", engineInst);
-    engineInst.setEnabled(true);
-
-    covInst = engineInst.lookup(Coverage.class);
-
-    assertNotNull("Coverage object/service not found", covInst);
+    covInst = Coverage.find(context.getEngine());
+    assertNotNull("Coverage tool not found", covInst);
   }
 }
