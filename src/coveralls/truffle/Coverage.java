@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.Instrument;
+
 import com.oracle.truffle.api.instrumentation.Instrumenter;
 import com.oracle.truffle.api.instrumentation.LoadSourceSectionEvent;
 import com.oracle.truffle.api.instrumentation.SourceSectionFilter;
@@ -47,15 +50,28 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import gcov.Gcov;
 
-@Registration(id = Coverage.ID)
+
+@Registration(name = "CoverallsTruffle", id = Coverage.ID, version = "0.1",
+    services = {Coverage.class})
 public class Coverage extends TruffleInstrument {
-  private Instrumenter       instrumenter;
-  public static final String ID = "coverageId";
+  static final String ID = "coverageId";
+
+  public static Coverage find(final Engine engine) {
+    Instrument instrument = engine.getInstruments().get(ID);
+    if (instrument == null) {
+      throw new IllegalStateException(
+          "Coverage tool not properly installed into polyglot.Engine");
+    }
+
+    return instrument.lookup(Coverage.class);
+  }
+
   private final Map<SourceSection, Counter> statements = new HashMap<>();
+  private final Set<RootNode>               rootNodes  = new HashSet<>();
 
-  private Set<RootNode>      rootNodes = new HashSet<>();
+  private Instrumenter instrumenter;
 
-  private String file;
+  private String              file;
   private Map<String, Long[]> coverage;
 
   @Override
@@ -70,7 +86,7 @@ public class Coverage extends TruffleInstrument {
     Builder filters = SourceSectionFilter.newBuilder();
     filters.tagIs(StatementTag.class);
 
-    instrumenter.attachFactory(filters.build(), ctx -> {
+    instrumenter.attachExecutionEventFactory(filters.build(), ctx -> {
       Counter c;
       if (statements.containsKey(ctx.getInstrumentedSourceSection())) {
         c = statements.get(ctx.getInstrumentedSourceSection());
@@ -84,7 +100,8 @@ public class Coverage extends TruffleInstrument {
     instrumenter.attachLoadSourceSectionListener(
         SourceSectionFilter.newBuilder().build(),
         (final LoadSourceSectionEvent event) -> {
-          rootNodes.add(event.getNode().getRootNode()); },
+          rootNodes.add(event.getNode().getRootNode());
+        },
         true);
   }
 
@@ -123,8 +140,7 @@ public class Coverage extends TruffleInstrument {
       Long[] data = coverageMap.get(e.getKey());
       Long[] oldD = e.getValue();
       if (data != null) {
-        assert oldD.length <= data.length :
-          "The gcov data format doesn't make lines explicit that don't have code";
+        assert oldD.length <= data.length : "The gcov data format doesn't make lines explicit that don't have code";
         for (int i = 0; i < oldD.length; i += 1) {
           if (oldD[i] != null) {
             updateLine(data, i, oldD[i]);
