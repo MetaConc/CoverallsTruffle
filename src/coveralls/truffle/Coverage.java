@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -171,7 +172,15 @@ public class Coverage extends TruffleInstrument {
       final SourceSection sourceSection, final Map<String, Long[]> coverageMap) {
     Long[] array;
     Source s = sourceSection.getSource();
-    String path = s.getPath() != null ? s.getPath() : s.getName();
+    String path;
+    if (s.getPath() != null) {
+      // make sure we skip the protocol, should be the file protocol,
+      // don't support anything else for gcov files
+      URI u = URI.create(s.getPath());
+      path = u.getPath();
+    } else {
+      path = s.getName();
+    }
 
     if (coverageMap.containsKey(path)) {
       array = coverageMap.get(path);
