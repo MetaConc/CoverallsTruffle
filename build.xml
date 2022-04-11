@@ -93,6 +93,7 @@
         <junit haltonerror="true" haltonfailure="true" outputtoformatters="true">
             <jvmarg value="-ea" />
             <jvmarg value="-esa" />
+            <jvmarg value="-Dpolyglot.engine.WarnInterpreterOnly=false" />
             <classpath refid="project.classpath" />
             <batchtest fork="yes" filtertrace="false">
               <fileset dir="tests">
