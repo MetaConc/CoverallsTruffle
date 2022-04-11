@@ -3,8 +3,8 @@
     <property name="src.dir"            location="src"/>
     <property name="lib.dir"            location="libs" />
     <property name="checkstyle.version" value="8.12" />
-    <property name="mvn.repo"           value="https://maven-central.storage.googleapis.com/repos/central/data" />  <!-- https://repo1.maven.org/maven2 gives 403 on Travis CI -->
-    <property name="truffle.version"    value="1.0.0-rc5" />
+    <property name="mvn.repo"           value="https://repo1.maven.org/maven2" />
+    <property name="truffle.version"    value="22.0.0.2" />
     <property name="junit.version"      value="4.12" />
 
     <property name="build.dir"          location="bin"/>
@@ -30,13 +30,13 @@
     
     <target name="libs">
         <mkdir dir="${lib.dir}"/>
-        <get src="${mvn.repo}/com/oracle/truffle/truffle-api/${truffle.version}/truffle-api-${truffle.version}.jar"
+        <get src="${mvn.repo}/org/graalvm/truffle/truffle-api/${truffle.version}/truffle-api-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/truffle-api-${truffle.version}.jar" />
-        <get src="${mvn.repo}/com/oracle/truffle/truffle-dsl-processor/${truffle.version}/truffle-dsl-processor-${truffle.version}.jar"
+        <get src="${mvn.repo}/org/graalvm/truffle/truffle-dsl-processor/${truffle.version}/truffle-dsl-processor-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/truffle-dsl-processor-${truffle.version}.jar" />
-        <get src="${mvn.repo}/com/oracle/truffle/truffle-sl/${truffle.version}/truffle-sl-${truffle.version}.jar"
+        <get src="${mvn.repo}/org/graalvm/truffle/truffle-sl/${truffle.version}/truffle-sl-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/truffle-sl-${truffle.version}.jar" />
         <get src="${mvn.repo}/junit/junit/${junit.version}/junit-${junit.version}.jar"
@@ -45,7 +45,7 @@
         <get src="${mvn.repo}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
             usetimestamp="true"
             dest="${lib.dir}/hamcrest-core-1.3.jar" />
-        <get src="${mvn.repo}/org/graalvm/graal-sdk/${truffle.version}/graal-sdk-${truffle.version}.jar"
+        <get src="${mvn.repo}/org/graalvm/sdk/graal-sdk/${truffle.version}/graal-sdk-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/graal-sdk-${truffle.version}.jar" />
             
