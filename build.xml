@@ -2,10 +2,10 @@
 
     <property name="src.dir"            location="src"/>
     <property name="lib.dir"            location="libs" />
-    <property name="checkstyle.version" value="8.12" />
+    <property name="checkstyle.version" value="10.21.2" />
     <property name="mvn.repo"           value="https://repo1.maven.org/maven2" />
-    <property name="truffle.version"    value="22.0.0.2" />
-    <property name="junit.version"      value="4.12" />
+    <property name="truffle.version"    value="24.1.2" />
+    <property name="junit.version"      value="4.13.2" />
 
     <property name="build.dir"          location="bin"/>
 
@@ -13,6 +13,9 @@
         <pathelement location="${build.dir}" />
         <pathelement location="${lib.dir}/truffle-api-${truffle.version}.jar" />
         <pathelement location="${lib.dir}/truffle-dsl-processor-${truffle.version}.jar" /> <!-- Needed to create META-INF/truffle/instrument -->
+        <pathelement location="${lib.dir}/polyglot-${truffle.version}.jar" />
+        <pathelement location="${lib.dir}/collections-${truffle.version}.jar" />
+        <pathelement location="${lib.dir}/nativeimage-${truffle.version}.jar" />
         <pathelement location="${lib.dir}/truffle-sl-${truffle.version}.jar" />
         <pathelement location="${lib.dir}/graal-sdk-${truffle.version}.jar" />
         <pathelement location="${lib.dir}/junit-${junit.version}.jar" />
@@ -27,7 +30,7 @@
         <delete dir="${build.dir}"/>
         <delete file="coveralls-truffle.jar"/>
     </target>
-    
+
     <target name="libs">
         <mkdir dir="${lib.dir}"/>
         <get src="${mvn.repo}/org/graalvm/truffle/truffle-api/${truffle.version}/truffle-api-${truffle.version}.jar"
@@ -36,6 +39,15 @@
         <get src="${mvn.repo}/org/graalvm/truffle/truffle-dsl-processor/${truffle.version}/truffle-dsl-processor-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/truffle-dsl-processor-${truffle.version}.jar" />
+        <get src="${mvn.repo}/org/graalvm/polyglot/polyglot/${truffle.version}/polyglot-${truffle.version}.jar"
+            usetimestamp="true"
+            dest="${lib.dir}/polyglot-${truffle.version}.jar" />
+        <get src="${mvn.repo}/org/graalvm/sdk/collections/${truffle.version}/collections-${truffle.version}.jar"
+            usetimestamp="true"
+            dest="${lib.dir}/collections-${truffle.version}.jar" />
+        <get src="${mvn.repo}/org/graalvm/sdk/nativeimage/${truffle.version}/nativeimage-${truffle.version}.jar"
+            usetimestamp="true"
+            dest="${lib.dir}/nativeimage-${truffle.version}.jar" />
         <get src="${mvn.repo}/org/graalvm/truffle/truffle-sl/${truffle.version}/truffle-sl-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/truffle-sl-${truffle.version}.jar" />
@@ -48,7 +60,7 @@
         <get src="${mvn.repo}/org/graalvm/sdk/graal-sdk/${truffle.version}/graal-sdk-${truffle.version}.jar"
             usetimestamp="true"
             dest="${lib.dir}/graal-sdk-${truffle.version}.jar" />
-            
+
     </target>
 
     <target name="checkstyle-jar">
@@ -57,7 +69,7 @@
             usetimestamp="true"
             dest="${lib.dir}/checkstyle-${checkstyle.version}-all.jar" />
     </target>
-    
+
     <target name="checkstyle" depends="checkstyle-jar" description="Check Code with Checkstyle">
         <taskdef resource="com/puppycrawl/tools/checkstyle/ant/checkstyle-ant-task.properties" classpath="${lib.dir}/checkstyle-${checkstyle.version}-all.jar" />
         <checkstyle config=".checkstyle_checks.xml">
@@ -103,6 +115,6 @@
             <formatter type="brief" usefile="false"/>
         </junit>
     </target>
-    
+
     <target name="tests" depends="unit-tests" />
 </project>
